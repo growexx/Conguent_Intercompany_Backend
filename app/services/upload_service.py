@@ -285,7 +285,7 @@ class UploadService:
         """
         try:
             for file_name in file_names:
-                self.oracle_bucket_client.get_file_from_bucket(file_name)
+                file_name = self.oracle_bucket_client.get_file_from_bucket(file_name)
                 self.file_upload(file_name)
                 os.remove(file_name)
             return {

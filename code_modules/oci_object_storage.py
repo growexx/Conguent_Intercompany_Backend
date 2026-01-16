@@ -73,7 +73,7 @@ class OCIObjectStorageClient(object):
             bucket_name=bucket_name,
             object_name=filename
         )
-        download_path = filename
+        download_path = filename.split("/")[-1]
         with open(download_path, "wb") as f:
             for chunk in response.data.raw.stream(1024 * 1024, decode_content=False):
                 f.write(chunk)
@@ -113,3 +113,4 @@ class OCIObjectStorageClient(object):
         logger.info(f"Uploading process finished {response}")
 
         return object_name
+
