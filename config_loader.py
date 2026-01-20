@@ -48,3 +48,22 @@ def load_adw_config(path: str = "config.ini") -> ADWConfig:
         username=parser.get("ADW", "USERNAME"),
         password=parser.get("ADW", "PASSWORD"),
     )
+
+
+def load_reconciliation_message_config(path: str = "config.ini"):
+    """
+    Loads ADW configutration from a file.
+    """
+    parser = ConfigParser()
+    parser.read(path)
+
+    return {
+        "recon_success_status": parser.get("RECONCILIATION", "recon_success_status"),
+        "recon_failure_status": parser.get("RECONCILIATION", "recon_failure_status"),
+        "recon_match_reconciled_message": parser.get("RECONCILIATION", "recon_match_reconciled_message"),
+        "recon_match_unreconciled_message": parser.get("RECONCILIATION", "recon_match_unreconciled_message"),
+        "recon_missed_ap_message": parser.get("RECONCILIATION", "recon_missed_ap_message"),
+        "recon_missed_ar_message": parser.get("RECONCILIATION", "recon_missed_ar_message"),
+        "recon_revoked_ap_message": parser.get("RECONCILIATION", "recon_revoked_ap_message"),
+        "recon_ap_missing_l8_message": parser.get("RECONCILIATION", "recon_ap_missing_l8_message"),
+    }

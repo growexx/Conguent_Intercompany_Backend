@@ -17,7 +17,7 @@ from fastapi import BackgroundTasks, Depends,  status
 router = APIRouter()
 service = ReconcileService()
 
-@router.post("/recon",status_code=202)
+@router.post("/recon")
 async def reconcile_inquiry(
     background_tasks: BackgroundTasks
 ):
@@ -26,7 +26,7 @@ async def reconcile_inquiry(
     """
     background_tasks.add_task(service.handle_inquiry)
     return {
-        "status": "accepted",
+        "status": 1,
         "message": "Reconciliation started in background"
     }
 

@@ -16,9 +16,9 @@ def test_reconcile_inquiry_accepted(client):
             "/api/InterCompany/v1/reconcile/recon"
         )
 
-        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
-            "status": "accepted",
+            "status": 1,
             "message": "Reconciliation started in background"
         }
 

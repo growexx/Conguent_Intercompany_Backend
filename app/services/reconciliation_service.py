@@ -8,7 +8,7 @@ This module contains:
 """
 
 from code_modules.oracle_adb_handler import OracleADBClient
-from config_loader import load_adw_config
+from config_loader import load_adw_config , load_reconciliation_message_config
 from code_modules.sql_query_loader import SQLQueryProvider
 import pandas as pd
 import traceback
@@ -160,7 +160,11 @@ class ReconcileService:
         """
         date_cols = ['ar_document_date', 'ap_document_date', 'ap_posting_date', 'ar_due_date']
         for col in date_cols:
-            final_df[col] = pd.to_datetime(final_df[col], errors="coerce").dt.date
+            final_df[col] = pd.to_datetime(final_df[col], errors="coerce")
+            final_df[col] = final_df[col].apply(
+                lambda x: x.date() if pd.notna(x) else None
+            )
+        print(final_df['ar_document_date'].unique())
 
 
         varchar_cols = [
@@ -231,23 +235,25 @@ class ReconcileService:
             print(ap_with_l8_df.shape)
             print(ap_without_l8_df.shape)
 
-            ap_single_df['message'] = 'Missing AR Details'
-            ap_single_df['status']='Unreconciled'
+            status_n_message_dict = load_reconciliation_message_config()
 
-            ap_with_l8_df['message'] = 'Raise : AP Approval rejected'
-            ap_with_l8_df['status']= 'Reconciled'
+            reconciled_df['message'] = status_n_message_dict['recon_match_reconciled_message']
+            reconciled_df['status'] = status_n_message_dict['recon_success_status']
 
-            ap_without_l8_df['message'] = 'Aps with multiple invoice records but no L8 document, Likely error.'
-            ap_without_l8_df['status']= 'UnReconciled'
+            ap_with_l8_df['message'] = status_n_message_dict['recon_revoked_ap_message']
+            ap_with_l8_df['status']= status_n_message_dict['recon_success_status']
 
-            reconciled_df['message'] = 'Reconciled'
-            reconciled_df['status'] = 'Reconciled'
+            ap_single_df['message'] = status_n_message_dict['recon_missed_ar_message']
+            ap_single_df['status']= status_n_message_dict['recon_failure_status']
 
-            ar_without_ap['message'] = 'Missing AP Details'
-            ar_without_ap['status'] = 'Unreconciled'
+            ap_without_l8_df['message'] = status_n_message_dict['recon_ap_missing_l8_message']
+            ap_without_l8_df['status']= status_n_message_dict['recon_failure_status']
 
-            rejected_df['message'] = 'Fields value Mismatch'
-            rejected_df['status'] = 'Unreconciled'
+            ar_without_ap['message'] = status_n_message_dict['recon_missed_ap_message']
+            ar_without_ap['status'] = status_n_message_dict['recon_failure_status']
+
+            rejected_df['message'] = status_n_message_dict['recon_match_unreconciled_message']
+            rejected_df['status'] = status_n_message_dict['recon_failure_status']
 
             final_recon_df = pd.concat(
                 [
@@ -300,6 +306,9 @@ class ReconcileService:
 
 
             records = final_recon_df.to_dict(orient="records")
+            # Clear table temporarily for avoiding duplicates
+            self.oracle_adb_client.execute_single_non_query("DELETE FROM INTERCOMPANY_RECON_RESULT")
+
             insert_sql = self.sql_query_provider.insert_recon_result_query()
             self.oracle_adb_client.execute_multiple_non_query(insert_sql, records)
 

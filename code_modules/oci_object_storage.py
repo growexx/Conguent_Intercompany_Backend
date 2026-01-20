@@ -113,4 +113,3 @@ class OCIObjectStorageClient(object):
         logger.info(f"Uploading process finished {response}")
 
         return object_name
-

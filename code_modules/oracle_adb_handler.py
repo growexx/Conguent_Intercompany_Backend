@@ -50,7 +50,13 @@ class OracleADBClient:
 
         conn = self._get_connection()
         try:
-            df = pd.read_sql(query, conn, params=params)
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+
+            rows = cursor.fetchall()
+            columns = [col[0] for col in cursor.description]
+            df = pd.DataFrame(rows, columns=columns)
+
             print("Query executed successfully, rows fetched: %d", len(df))
             return df
         except Exception:

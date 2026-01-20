@@ -20,33 +20,42 @@ def mock_config():
 
 @patch("code_modules.oracle_adb_handler.oracledb.connect")
 def test_execute_query_df_success(mock_connect, mock_config):
-    """Test successful SELECT query returning DataFrame"""
+    # Mock connection and cursor
+    mock_cursor = MagicMock()
+    mock_cursor.fetchall.return_value = [(1,), (2,)]
+    mock_cursor.description = [("id",)]
+
     mock_conn = MagicMock()
+    mock_conn.cursor.return_value = mock_cursor
     mock_connect.return_value = mock_conn
 
+    client = OracleADBClient(mock_config)
+    result = client.execute_query_df("SELECT * FROM table")
+
     expected_df = pd.DataFrame({"id": [1, 2]})
-
-    with patch("code_modules.oracle_adb_handler.pd.read_sql", return_value=expected_df):
-        client = OracleADBClient(mock_config)
-        result = client.execute_query_df("SELECT * FROM table")
-
     assert result.equals(expected_df)
+
+    # This now works correctly
+    mock_cursor.execute.assert_called_once_with("SELECT * FROM table", None)
     mock_conn.close.assert_called_once()
+
 
 
 @patch("code_modules.oracle_adb_handler.oracledb.connect")
 def test_execute_query_df_failure(mock_connect, mock_config):
-    """Test SELECT query failure raises exception and closes connection"""
+    # Mock connection and cursor
+    mock_cursor = MagicMock()
+    mock_cursor.execute.side_effect = Exception("DB error")
+    mock_cursor.description = [("id",)]
+
     mock_conn = MagicMock()
+    mock_conn.cursor.return_value = mock_cursor
     mock_connect.return_value = mock_conn
 
-    with patch(
-        "code_modules.oracle_adb_handler.pd.read_sql",
-        side_effect=Exception("DB error"),
-    ):
-        client = OracleADBClient(mock_config)
-        with pytest.raises(Exception):
-            client.execute_query_df("SELECT * FROM table")
+    client = OracleADBClient(mock_config)
+
+    with pytest.raises(Exception):
+        client.execute_query_df("SELECT * FROM table")
 
     mock_conn.close.assert_called_once()
 

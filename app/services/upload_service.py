@@ -245,8 +245,10 @@ class UploadService:
             df = df.rename(columns=schema)
             if is_ar_file:
                 df = preprocess_ar_df(df)
+                self.oracle_adb_client.execute_single_non_query("DELETE FROM INTERCOMPANY_AR_DATA")
             else:
                 df = preprocess_ap_df(df)
+                self.oracle_adb_client.execute_single_non_query("DELETE FROM INTERCOMPANY_AP_DATA")
             records = df.to_dict(orient="records")
             self.oracle_adb_client.execute_multiple_non_query(insert_query, records)
             return {
